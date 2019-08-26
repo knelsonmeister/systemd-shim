@@ -1,0 +1,30 @@
+From: Ian Jackson <ijackson@chiark.greenend.org.uk>
+Date: Mon, 16 Jan 2017 16:42:02 +0000
+X-Dgit-Generated: 10-3~exp2 c796945940afcc811e735c4cc7f86b73c41c600a
+Subject: Wrapper script moved to libexec, as it contains an arch-specific path
+
+and is therefore itself arch-specific.
+
+Closes:#851566.
+
+Signed-off-by: Ian Jackson <ijackson@chiark.greenend.org.uk>
+
+---
+
+--- systemd-shim-10.orig/data/Makefile.am
++++ systemd-shim-10/data/Makefile.am
+@@ -9,5 +9,5 @@ org.freedesktop.systemd1.service: Makefi
+ 	$(AM_V_GEN) (echo '[D-BUS Service]'; \
+ 	             echo 'Name=org.freedesktop.systemd1'; \
+ 	             echo 'User=root'; \
+-	             echo 'Exec=${pkgdatadir}/systemd-shim-invoke') > $@.tmp && \
++	             echo 'Exec=${libexecdir}/systemd-shim-invoke') > $@.tmp && \
+ 	            mv $@.tmp $@
+--- systemd-shim-10.orig/scripts/Makefile.am
++++ systemd-shim-10/scripts/Makefile.am
+@@ -1,4 +1,4 @@
+-pkgdata_SCRIPTS = systemd-shim-invoke
++libexec_SCRIPTS = systemd-shim-invoke
+ EXTRA_DIST = systemd-shim-invoke.in
+ 
+ do_subst = sed \

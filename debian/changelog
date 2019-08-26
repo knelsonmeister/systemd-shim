@@ -1,0 +1,253 @@
+systemd-shim (10-3) unstable; urgency=high
+
+  * QA upload.
+  * Upload to unstable, for stretch.
+  * No code changes.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Wed, 18 Jan 2017 12:02:27 +0000
+
+systemd-shim (10-3~exp2) experimental; urgency=medium
+
+  * QA upload.
+
+  [ Ian Jackson ]
+  * Wrapper script moved to libexec, as it contains an arch-specific path
+    and is therefore itself arch-specific.  Closes:#851566.
+  * Fix my email address in changelog entry for 10-3~exp1.
+
+  [ Nikolaus Schulz ]
+  * Support hybrid-sleep.  Closes:#780697.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 16 Jan 2017 17:24:44 +0000
+
+systemd-shim (10-3~exp1) experimental; urgency=high
+
+  QA upload:
+  * Install wrapper script to mount /sys/fs/cgroup/systemd.
+    Fixes "not authorised" problem with various desktop services,
+    when running with newer systemd.  Closes:#844785 in Debian.
+    [Michael Biebl, Ian Jackson]
+  * Add debian/.gitignore.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 15 Jan 2017 14:54:49 +0000
+
+systemd-shim (10-2) unstable; urgency=medium
+
+  * debian/copyright: Update Source: field.
+  * Orphan package. (See #832508)
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 26 Jul 2016 11:25:00 +0200
+
+systemd-shim (10-1) unstable; urgency=medium
+
+  [ Martin Pitt ]
+  * New upstream release:
+    - Use the ntp support for 'systemd-timesyncd.service' too.
+    - Don't override an existing release agent.
+  * autopkgtests: The tests won't work when running under systemd; in that
+    case, try to install upstart and reboot, and skip if that's not available.
+  * Bump Standards-Version to 3.9.8 (no changes necessary).
+  * debian/control: Drop obsolete XS-Testsuite: tag.
+  * debian/tests/control: Modernize syntax.
+  * debian/tests/*: Install sysvinit-core instead of upstart, as the latter is
+    gone from Debian, and upstart-sysv is gone from Ubuntu.
+  * debian/watch: Adjust for new upstream location, directly using github
+    tarballs.
+
+  [ Iain Lane ]
+  * autopkgtests: umount /sys/power/state instead of the source
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 08 Jun 2016 15:14:20 +0200
+
+systemd-shim (9-1) unstable; urgency=medium
+
+  * New upstream release.
+    - Add org.freedesktop.systemd1.Manager Version property (Closes: #766237)
+    - Clean up closing logind sessions (Closes: #756076)
+  * Add myself to Uploaders: with Steve's consent.
+  * Bump Standards-Version to 3.9.5 (no changes necessary).
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 05 Nov 2014 21:55:33 +0100
+
+systemd-shim (8-4) unstable; urgency=medium
+
+  * Drop the dbus policy entirely from this package, as discussed in bug
+    #765101; since the security policy should always be in sync with
+    systemd's, and since the systemd package ships both logind (the consumer
+    of systemd-shim) and this dbus policy, there's no reason to ship this
+    separately rather than relying on the systemd copy.
+
+ -- Steve Langasek <vorlon@debian.org>  Wed, 22 Oct 2014 04:29:44 +0000
+
+systemd-shim (8-3) unstable; urgency=medium
+
+  * debian/patches/dbus-policy-v215.patch: update our dbus policy to match
+    that from systemd 215.  Closes: #765101.
+
+ -- Steve Langasek <vorlon@debian.org>  Tue, 14 Oct 2014 04:54:09 +0000
+
+systemd-shim (8-2) unstable; urgency=medium
+
+  * No-change rebuild against systemd 215.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 16 Sep 2014 07:02:23 +0200
+
+systemd-shim (8-1) unstable; urgency=medium
+
+  * Update watch file.
+  * New upstream release.
+    - Drop patches cherry-picked from upstream.
+  * Add versioned dependency on cgmanager (>= 0.32) for new APIs.
+
+ -- Steve Langasek <vorlon@debian.org>  Wed, 10 Sep 2014 15:51:34 +0000
+
+systemd-shim (7-3) unstable; urgency=medium
+
+  * debian/patches/0001-cgmanager-stop-doing-async-calls.patch:
+    cgmanager: stop doing async calls; fixes a race condition on login.
+    Thanks to Ryan Lortie <desrt@desrt.ca>.  Closes LP: #1365095.
+
+ -- Steve Langasek <vorlon@debian.org>  Fri, 05 Sep 2014 15:49:39 -0700
+
+systemd-shim (7-2) unstable; urgency=medium
+
+  * Fix Start TransientUnit signature for systemd >= 209. Check systemd
+    version during package build. Patch from upstream git. (LP: #1351815)
+  * Add systemd build dep for above configure check to work.
+  * Generate Breaks: to systemd >= or << 209, depending on which version we
+    build against.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 03 Sep 2014 08:07:00 +0200
+
+systemd-shim (7-1) unstable; urgency=medium
+
+  * New upstream release:
+    - Provide cgmanager integration to work with logind >= 205.
+    - Use "shutdown -h" instead of "poweroff" to respect /etc/default/halt
+      (LP: #1193944)
+    - Add stubs for Subscribe and Unsubscribe (LP: #1348039)
+  * Drop all patches, included upstream.
+  * debian/tests/lifecycle: Stop assuming that the shim isn't running
+    initially, as it's now often activated during login, upgrade, etc.
+    Instead, kill it manually to re-test D-BUS activation. Fixes autopkgtest
+    regression.
+  * debian/tests/power: Adjust to poweroff → shutdown upstream change.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 20 Aug 2014 08:22:08 +0200
+
+systemd-shim (6-5) unstable; urgency=medium
+
+  * Mark systemd-shim as Linux-only, since it now requires cgmanager which
+    is also Linux-only.
+
+ -- Steve Langasek <vorlon@debian.org>  Sun, 10 Aug 2014 22:30:43 -0700
+
+systemd-shim (6-4) unstable; urgency=medium
+
+  * Merge cgmanager support from Ubuntu; thanks to Serge Hallyn and
+    Martin Pitt.  Closes: #752939.
+  * Fix wrong path used in the .maintscript file.  Closes: #748791.
+
+ -- Steve Langasek <vorlon@debian.org>  Fri, 25 Jul 2014 16:48:09 +0000
+
+systemd-shim (6-3) unstable; urgency=medium
+
+  [ Martin Pitt ]
+  * Mark autopkgtest with "isolation-machine" as this test can't run in
+    schroot or LXC.
+
+  [ Steve Langasek ]
+  * Sync /etc/dbus-1/system.d/org.freedesktop.systemd-shim.conf with
+    /etc/dbus-1/system.d/org.freedesktop.systemd1.conf; since this only
+    governs the security policy there's no reason for it to be different
+    between the two implementations even though some of the declared
+    interfaces will not be available on systemd-shim.  Closes: #746242.
+
+ -- Steve Langasek <vorlon@debian.org>  Tue, 29 Apr 2014 07:49:10 +0000
+
+systemd-shim (6-2) unstable; urgency=medium
+
+  * Add diversions for the systemd package, and move the systemd-shim dbus
+    file to a different filename under /etc/dbus-1 so that we can drop the
+    Conflicts with systemd.
+
+ -- Steve Langasek <vorlon@debian.org>  Wed, 01 Jan 2014 10:11:19 +0000
+
+systemd-shim (6-1) unstable; urgency=medium
+
+  * Initial upload to Debian.
+
+ -- Steve Langasek <vorlon@debian.org>  Sat, 28 Dec 2013 21:05:01 +0000
+
+systemd-shim (6-0ubuntu1) trusty; urgency=low
+
+  * New upstream release:
+    - Flush the right bus (system, not session), to address another case of
+      "PrepareForSleep signal is missing" which breaks networking after
+      resuming. (LP: #1252121)
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Tue, 10 Dec 2013 10:54:18 +0100
+
+systemd-shim (5-0ubuntu2) trusty; urgency=low
+
+  * Bump Standards-Version to 3.9.5, no changes necessary.
+  * Add autopkgtests for lifecycle management and power unit API handling.
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Wed, 20 Nov 2013 15:06:23 +0100
+
+systemd-shim (5-0ubuntu1) trusty; urgency=low
+
+  * New upstream release:
+    - Write a sendsigs.omit.d file to prevent upstart from killing us during
+      shutdown. That's the other half of preventing suspends during shutdown.
+      (LP: #1211514)
+  * Update debian/copyright and debian/watch for new upstream address.
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Thu, 14 Nov 2013 18:44:47 +0100
+
+systemd-shim (4-0ubuntu1) trusty; urgency=low
+
+  * New upstream release:
+    - Flush bus before exiting on idle to avoid a race where a message is
+      queued up but not yet sent. (LP: #1184262, part 1)
+    - Adjust the definition of "inactivity" to be 10 seconds after done
+      processing the last request instead of 10 seconds after we started.
+      This matters for long-running tasks like suspend. (LP: #1184262, part 2)
+    - Don't exit-on-idle while shutting down to avoid losing the flag that
+      tells us we are in the middle of a shutdown. (Necessary, but not
+      sufficient for LP #1211514)
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Tue, 12 Nov 2013 09:31:19 +0100
+
+systemd-shim (3+real-0ubuntu1) saucy; urgency=low
+
+  * Upload the real version 3 tarball this time, fixing poweroff.target.
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Thu, 02 May 2013 11:14:19 -0700
+
+systemd-shim (3-0ubuntu1) saucy; urgency=low
+
+  * New upstream release
+  * Add a watch file.
+  * Suggest pm-utils.
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Thu, 02 May 2013 09:56:31 -0700
+
+systemd-shim (2-0ubuntu1) raring; urgency=low
+
+  * New upstream version: Install a ntp-units.d file so that never versions 
+    of timedated don't assume that NTP is impossible.
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 27 Mar 2013 19:43:26 +0100
+
+systemd-shim (1-0ubuntu1) raring; urgency=low
+
+  * New upstream version
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Tue, 26 Mar 2013 17:12:18 +0100
+
+systemd-shim (0.0-0ubuntu1) raring; urgency=low
+
+  * Initial release to Ubuntu
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Fri, 01 Mar 2013 11:42:18 +0100

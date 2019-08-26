@@ -1,0 +1,166 @@
+From: Nikolaus Schulz <ns@htonl.de>
+Date: Mon, 16 Jan 2017 17:08:49 +0000
+X-Dgit-Generated: 10-3~exp2 2e6251c75f439cb96034b36037c26113a9d93569
+Subject: Support hybrid-sleep
+
+systemd-shim is currently lacking support for hybrid sleep.  Since
+e.g. upower by default tries to trigger hybrid sleep on laptops when
+the battery goes critically low, this can lead to data loss.
+
+(To make the current situation worse, invoking
+org.freedesktop.login1.Manager.HybridSleep on the dbus fails with the
+misleading error message
+
+  Error org.freedesktop.DBus.Error.FileNotFound: Unknown unit: hybrid-sleep.target
+
+which does *not* imply that /lib/systemd/system/hybrid-sleep.target
+does not exist.)
+
+I have cooked up a patch that adds hybrid sleep support to the systemd
+shim.  It would be great if you could apply it to the Debian package.
+
+Thanks,
+Nikolaus
+
+[ Closes:#780697  - Ian Jackson. ]
+
+---
+
+--- systemd-shim-10.orig/src/power-unit.c
++++ systemd-shim-10/src/power-unit.c
+@@ -32,7 +32,8 @@ const gchar *power_cmds[] = {
+   [POWER_OFF] = "/sbin/shutdown -h now",
+   [POWER_REBOOT] = "/sbin/reboot",
+   [POWER_SUSPEND] = "/usr/sbin/pm-suspend",
+-  [POWER_HIBERNATE] = "/usr/sbin/pm-hibernate"
++  [POWER_HIBERNATE] = "/usr/sbin/pm-hibernate",
++  [POWER_HYBRID_SLEEP] = "/usr/sbin/pm-suspend-hybrid"
+ };
+ 
+ typedef struct
+@@ -45,6 +46,61 @@ G_DEFINE_TYPE (PowerUnit, power_unit, UN
+ 
+ gboolean in_shutdown;
+ 
++static gint
++set_hibernation_mode (const gchar *mode, gchar **previous_mode)
++{
++  gint fd, cnt;
++
++  g_return_val_if_fail (mode != NULL, -1);
++
++  fd = open ("/sys/power/disk", O_RDWR);
++  if (fd == -1)
++    {
++      g_warning ("Could not open /sys/power/disk");
++      return -1;
++    }
++
++  if (previous_mode)
++    {
++      /* When reading /sys/power/disk, each supported mode is output with a
++       * space appended, and the active mode is put in brackets.
++       */
++      gchar hibernation_modes[sizeof "platform [shutdown] reboot suspend \n"];
++      gchar *active_hibernation_mode, *end;
++
++      *previous_mode = NULL;
++
++      cnt = read (fd, hibernation_modes, sizeof hibernation_modes);
++      if (cnt == -1 || cnt == sizeof hibernation_modes)
++        goto parse_error;
++
++      active_hibernation_mode = strchr (hibernation_modes, '[');
++      if (active_hibernation_mode == NULL)
++        goto parse_error;
++      ++active_hibernation_mode;
++      end = strchr (active_hibernation_mode, ']');
++      if (end == NULL)
++        goto parse_error;
++      *end = '\0';
++
++      if (!g_str_equal (active_hibernation_mode, "disabled"))
++        *previous_mode = g_strdup (active_hibernation_mode);
++    }
++
++  cnt = write (fd, mode, strlen (mode));
++  if (cnt != strlen (mode))
++    goto error;
++
++  close (fd);
++  return 0;
++
++parse_error:
++  g_warning ("Error decoding /sys/power/disk");
++error:
++  close (fd);
++  return -1;
++}
++
+ static void
+ power_unit_start (Unit *unit)
+ {
+@@ -89,7 +145,8 @@ power_unit_start (Unit *unit)
+        * timestamp of the event that caused the suspend all the way
+        * down.
+        */
+-      if (pu->action == POWER_SUSPEND && last_suspend_time + G_TIME_SPAN_SECOND > g_get_monotonic_time ())
++      if ((pu->action == POWER_SUSPEND || pu->action == POWER_HYBRID_SLEEP) &&
++          last_suspend_time + G_TIME_SPAN_SECOND > g_get_monotonic_time ())
+         return;
+ 
+       /* pm-utils might not have been installed, so go the direct route
+@@ -104,6 +161,13 @@ power_unit_start (Unit *unit)
+         {
+           const gchar *kind;
+           gint fd;
++          gchar *previous_hibernation_mode;
++
++          if (pu->action == POWER_HYBRID_SLEEP)
++            {
++              if (set_hibernation_mode ("suspend", &previous_hibernation_mode) != 0)
++                g_warning ("Could not set hibernation mode");
++            }
+ 
+           fd = open ("/sys/power/state", O_WRONLY);
+           if (fd == -1)
+@@ -116,9 +180,16 @@ power_unit_start (Unit *unit)
+           if (write (fd, kind, strlen (kind)) != strlen (kind))
+             g_warning ("Failed to write() to /sys/power/state?!?");
+           close (fd);
++
++          if (previous_hibernation_mode)
++            {
++              if (set_hibernation_mode (previous_hibernation_mode, NULL) != 0)
++                g_warning ("Could not reset hibernation mode");
++              g_free (previous_hibernation_mode);
++            }
+         }
+ 
+-      if (pu->action == POWER_SUSPEND)
++      if (pu->action == POWER_SUSPEND || pu->action == POWER_HYBRID_SLEEP)
+         last_suspend_time = g_get_monotonic_time ();
+     }
+ }
+--- systemd-shim-10.orig/src/unit.c
++++ systemd-shim-10/src/unit.c
+@@ -47,6 +47,9 @@ lookup_unit (const gchar  *unit_name,
+   else if (g_str_equal (unit_name, "hibernate.target"))
+     unit = power_unit_new (POWER_HIBERNATE);
+ 
++  else if (g_str_equal (unit_name, "hybrid-sleep.target"))
++    unit = power_unit_new (POWER_HYBRID_SLEEP);
++
+   else if (g_str_equal (unit_name, "reboot.target"))
+     unit = power_unit_new (POWER_REBOOT);
+ 
+--- systemd-shim-10.orig/src/unit.h
++++ systemd-shim-10/src/unit.h
+@@ -54,6 +54,7 @@ typedef enum
+   POWER_REBOOT,
+   POWER_SUSPEND,
+   POWER_HIBERNATE,
++  POWER_HYBRID_SLEEP,
+   N_POWER_ACTIONS
+ } PowerAction;
+ 

@@ -1,0 +1,20 @@
+Source: systemd-shim
+Section: admin
+Priority: extra
+Maintainer: Debian QA Group <packages@qa.debian.org>
+Uploaders: Steve Langasek <vorlon@debian.org>, Martin Pitt <mpitt@debian.org>
+Build-Depends: debhelper (>= 9), dh-autoreconf, libglib2.0-dev, systemd
+Standards-Version: 3.9.8
+Vcs-Bzr: nosmart+http://bzr.debian.org/bzr/collab-maint/systemd-shim/trunk/
+Vcs-Browser: http://anonscm.debian.org/loggerhead/collab-maint/systemd-shim/trunk/
+
+Package: systemd-shim
+Architecture: linux-any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         cgmanager (>= 0.32)
+Suggests: pm-utils
+Breaks: ${systemd:Breaks}
+Description: shim for systemd
+ This package emulates the systemd function that are required to run
+ the systemd helpers without using the init service

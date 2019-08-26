@@ -1,0 +1,141 @@
+#!/bin/sh
+# Check power unit
+# Author: Martin Pitt <martin.pitt@ubuntu.com>
+set -eu
+
+if [ -d /run/systemd/system ]; then
+    if [ ! -x /tmp/autopkgtest-reboot ]; then
+        echo "SKIP: testbed does not support reboot"
+        exit 0
+    fi
+    if [ -n "${ADT_REBOOT_MARK:-}" ]; then
+        echo "SKIP: Reboot with sysvinit-core still runs systemd; using init= ?"
+        exit 0
+    fi
+    echo "Installing sysvinit-core..."
+    apt-get install -y sysvinit-core
+    echo "Rebooting into SysV init..."
+    /tmp/autopkgtest-reboot b1
+fi
+
+CALL_MGR="gdbus call -y -d org.freedesktop.systemd1 -o /org/freedesktop/systemd1 -m org.freedesktop.systemd1.Manager"
+
+# install ephemeral stubs for power management commands
+WRAPPED_CMDS="/usr/sbin/pm-suspend /usr/sbin/pm-hibernate /sbin/shutdown /sbin/reboot"
+WORKDIR=`mktemp -d`
+/bin/echo -e '#!/bin/sh\necho "$0 $@" >> '$WORKDIR'/log' > $WORKDIR/stub
+chmod 755 $WORKDIR/stub
+for cmd in $WRAPPED_CMDS; do
+    mount -o bind $WORKDIR/stub $cmd
+done
+FAKE_SYS_STATE="$WORKDIR/sys_power_state"
+touch $FAKE_SYS_STATE
+mount -o bind $FAKE_SYS_STATE /sys/power/state
+
+# clean up mounts and temp dir on exit
+cleanup() {
+    echo 'Cleanup...'
+    set +e
+    for c in $WRAPPED_CMDS; do umount $c; done
+    umount /sys/power/state
+    rm -r $WORKDIR
+}
+trap cleanup EXIT HUP INT QUIT ABRT PIPE TERM
+
+# flush log and return it in $LOG
+flush_log() {
+    sync
+    LOG=`cat $WORKDIR/log 2>/dev/null` || LOG=''
+    rm -f $WORKDIR/log
+}
+
+# flush /sys/power/state and return it in $LOG
+flush_sys() {
+    sync
+    LOG=`cat $FAKE_SYS_STATE 2>/dev/null` || LOG=''
+    echo > $FAKE_SYS_STATE
+}
+
+assert_eq() {
+    if [ "$1" != "$2" ]; then
+        echo "FAIL: '$1' not equal to '$2'" >&2
+        exit 1
+    fi
+}
+
+reset() {
+    pkill -e -f /usr/lib/*/systemd-shim || true
+}
+
+
+# make sure we start with a clean slate
+reset
+
+#
+# Tests start here
+#
+
+echo "suspend"
+${CALL_MGR}.StartUnit 'suspend.target' ''
+flush_log
+assert_eq "$LOG" "/usr/sbin/pm-suspend "
+
+echo "hibernate"
+${CALL_MGR}.StartUnit 'hibernate.target' ''
+flush_log
+assert_eq "$LOG" "/usr/sbin/pm-hibernate "
+
+echo "shutdown"
+${CALL_MGR}.StartUnit 'shutdown.target' ''
+flush_log
+assert_eq "$LOG" "/sbin/shutdown -h now"
+
+echo "no inactivity timeout after poweroff"
+PID=`pidof systemd-shim`
+sleep 12
+assert_eq "`pidof systemd-shim`" "$PID"
+
+echo "suspend while poweroff is in progress"
+${CALL_MGR}.StartUnit 'suspend.target' ''
+flush_log
+assert_eq "$LOG" ""
+reset
+
+echo "reboot"
+${CALL_MGR}.StartUnit 'reboot.target' ''
+flush_log
+assert_eq "$LOG" "/sbin/reboot "
+
+echo "unknown unit"
+if ${CALL_MGR}.StartUnit 'unknown.target' '' 2>&1; then
+    echo "unknown.target unexpectedly succeeded"
+    exit 1
+fi
+
+echo "two suspends in quick succession are just counted once"
+reset
+${CALL_MGR}.StartUnit 'suspend.target' ''
+sleep 0.5
+${CALL_MGR}.StartUnit 'suspend.target' ''
+flush_log
+assert_eq "$LOG" "/usr/sbin/pm-suspend "
+
+echo "suspend falls back to writing /sys if pm-utils is not available"
+reset
+chmod 0 /usr/sbin/pm-suspend
+${CALL_MGR}.StartUnit 'suspend.target' ''
+flush_log
+assert_eq "$LOG" ""
+flush_sys
+assert_eq "$LOG" "mem"
+
+echo "hibernate falls back to writing /sys if pm-utils is not available"
+reset
+chmod 0 /usr/sbin/pm-hibernate
+${CALL_MGR}.StartUnit 'hibernate.target' ''
+flush_log
+assert_eq "$LOG" ""
+flush_sys
+assert_eq "$LOG" "disk"
+
+echo "all tests passed"

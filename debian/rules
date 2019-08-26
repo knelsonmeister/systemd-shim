@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+%:
+	dh $@  --with autoreconf
+
+override_dh_install:
+	dh_install
+	rm -rf debian/systemd-shim/etc
+
+# StartTransientUnit D-BUS API change in 209
+override_dh_gencontrol:
+	if [ `pkg-config --modversion systemd` -ge 209 ]; then \
+	    dh_gencontrol -- -Vsystemd:Breaks='systemd (<< 209)'; \
+	else \
+	    dh_gencontrol -- -Vsystemd:Breaks='systemd (>= 209)'; \
+	fi

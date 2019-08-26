@@ -1,0 +1,82 @@
+From: Ian Jackson <ijackson@chiark.greenend.org.uk>
+Date: Sun, 15 Jan 2017 15:22:07 +0000
+X-Dgit-Generated: 10-3~exp1 a649ff56cc975e2806146706a21799e3cde12361
+Subject: Install wrapper script to mount /sys/fs/cgroup/systemd
+
+Closes:#844785 in Debian.
+
+Script was originally posted in
+  https://lists.debian.org/debian-devel/2017/01/msg00219.html
+I think Michael intended to implicitly grant copyright authorisation
+for this script to be distributed.  I have lightly modified the script.
+
+Signed-off-by: Ian Jackson <ijackson@chiark.greenend.org.uk>
+
+---
+
+--- systemd-shim-10.orig/Makefile.am
++++ systemd-shim-10/Makefile.am
+@@ -1,3 +1,3 @@
+-SUBDIRS = data src
++SUBDIRS = data src scripts
+ 
+ EXTRA_DIST = COPYING NEWS
+--- systemd-shim-10.orig/configure.ac
++++ systemd-shim-10/configure.ac
+@@ -15,5 +15,6 @@ PKG_CHECK_MODULES(systemd, systemd)
+ AC_DEFINE_UNQUOTED([SYSTEMD_VERSION], [`$PKG_CONFIG --modversion systemd`], [systemd version])
+ AC_CONFIG_FILES([Makefile
+                  data/Makefile
+-                 src/Makefile])
++                 src/Makefile
++                 scripts/Makefile])
+ AC_OUTPUT
+--- systemd-shim-10.orig/data/Makefile.am
++++ systemd-shim-10/data/Makefile.am
+@@ -9,5 +9,5 @@ org.freedesktop.systemd1.service: Makefi
+ 	$(AM_V_GEN) (echo '[D-BUS Service]'; \
+ 	             echo 'Name=org.freedesktop.systemd1'; \
+ 	             echo 'User=root'; \
+-	             echo 'Exec=${libexecdir}/systemd-shim') > $@.tmp && \
++	             echo 'Exec=${pkgdatadir}/systemd-shim-invoke') > $@.tmp && \
+ 	            mv $@.tmp $@
+--- /dev/null
++++ systemd-shim-10/scripts/.gitignore
+@@ -0,0 +1 @@
++systemd-shim-invoke
+--- /dev/null
++++ systemd-shim-10/scripts/Makefile.am
+@@ -0,0 +1,11 @@
++pkgdata_SCRIPTS = systemd-shim-invoke
++EXTRA_DIST = systemd-shim-invoke.in
++
++do_subst = sed \
++		-e 's,[@]libexecdir[@],$(libexecdir),g' \
++		-e ''
++
++systemd-shim-invoke: systemd-shim-invoke.in Makefile
++	$(do_subst) <$< >$@.new
++	chmod +x $@.new
++	mv -f $@.new $@
+--- /dev/null
++++ systemd-shim-10/scripts/systemd-shim-invoke.in
+@@ -0,0 +1,19 @@
++#!/bin/sh
++
++set -e
++
++# We rely on cgmanager to setup /sys/fs/cgroup
++if ! mountpoint -q /sys/fs/cgroup; then
++	echo "cgmanager has not setup /sys/fs/cgroup or is not running, exiting"
++	exit 1
++fi
++
++# Mount legacy cgroup controller at /sys/fs/cgroup/systemd
++if ! mountpoint -q /sys/fs/cgroup/systemd; then
++	mkdir -p /sys/fs/cgroup/systemd
++	mount -t cgroup -o nosuid,noexec,nodev,none,name=systemd systemd /sys/fs/cgroup/systemd
++fi
++
++mkdir -p /run/systemd
++
++exec @libexecdir@/systemd-shim

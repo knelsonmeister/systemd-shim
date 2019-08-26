@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = remove -o "$1" = purge ]; then
+	dpkg-divert --package systemd-shim --remove --rename --divert \
+		/usr/share/dbus-1/system-services/org.freedesktop.systemd1.service.systemd \
+		/usr/share/dbus-1/system-services/org.freedesktop.systemd1.service
+fi
+
+#DEBHELPER#

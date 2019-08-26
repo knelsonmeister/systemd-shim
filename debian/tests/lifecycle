@@ -1,0 +1,40 @@
+#!/bin/sh
+# Check D-BUS activation and 10 s inactivity timeout
+# Author: Martin Pitt <martin.pitt@ubuntu.com>
+set -eux
+
+if [ -d /run/systemd/system ]; then
+    if [ ! -x /tmp/autopkgtest-reboot ]; then
+        echo "SKIP: testbed does not support reboot"
+        exit 0
+    fi
+    if [ -n "${ADT_REBOOT_MARK:-}" ]; then
+        echo "SKIP: Reboot with sysvinit-core still runs systemd; using init= ?"
+        exit 0
+    fi
+    echo "Installing sysvinit-core..."
+    apt-get install -y sysvinit-core
+    echo "Rebooting into SysV init..."
+    /tmp/autopkgtest-reboot b1
+fi
+
+CALL_MGR="gdbus call -y -d org.freedesktop.systemd1 -o /org/freedesktop/systemd1 -m org.freedesktop.systemd1.Manager"
+
+# ensure it is not running
+killall systemd-shim || true
+
+# activate it
+${CALL_MGR}.Reload
+
+# should be running now
+PID=`pidof systemd-shim`
+[ -n "$PID" ]
+
+# should still be running with the same pid after 5 s
+sleep 5
+[ "`pidof systemd-shim`" = "$PID" ]
+
+# should time out after 10 s, so wait another 7
+sleep 7
+pidof systemd-shim && { echo "FAIL: not timing out after 10s"; exit 1; }
+true

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+dpkg-divert --package systemd-shim --add --rename --divert \
+	/usr/share/dbus-1/system-services/org.freedesktop.systemd1.service.systemd \
+	/usr/share/dbus-1/system-services/org.freedesktop.systemd1.service
+
+#DEBHELPER#

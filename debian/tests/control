@@ -1,0 +1,7 @@
+Tests: lifecycle
+Depends: @, libglib2.0-bin
+Restrictions: needs-root, allow-stderr, isolation-machine
+
+Tests: power
+Depends: @, libglib2.0-bin, pm-utils
+Restrictions: needs-root, isolation-machine
