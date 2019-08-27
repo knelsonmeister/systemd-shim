@@ -1,0 +1,22 @@
+--- systemd-shim-10.orig/src/systemd-iface.h	2016-06-08 08:06:37.000000000 -0500
++++ systemd-shim-10/src/systemd-iface.h	2019-06-15 19:07:16.108067937 -0500
+@@ -52,6 +52,7 @@ static const gchar *systemd_iface =
+    "</interface>"
+    "<interface name='org.freedesktop.systemd1.Unit'>"
+     "<property name='ActiveState' type='s' access='read'/>"
++    "<property name='LoadState' type='s' access='read'/>"
+    "</interface>"
+   "</node>";
+ 
+--- systemd-shim-10.orig/src/systemd-shim.c	2016-06-08 08:06:37.000000000 -0500
++++ systemd-shim-10/src/systemd-shim.c	2019-06-15 19:18:53.595830761 -0500
+@@ -333,6 +333,9 @@ shim_unit_get_property (GDBusConnection
+   if (g_strcmp0(property_name, "ActiveState") == 0) {
+       return g_variant_new_string ("inactive");
+   }
++  if (g_strcmp0(property_name, "LoadState") == 0) {
++      return g_variant_new_string ("loaded");
++  }
+ 
+   return NULL;
+ }

@@ -1,3 +1,9 @@
+systemd-shim (10-4) unstable; urgency=medium
+
+  * Changes to support debian buster 
+
+ -- Kevin Nelson <github.com/knelsonmeister>  Fri, 14 Jun 2019 21:28:08 -0500
+
 systemd-shim (10-3) unstable; urgency=high
 
   * QA upload.
