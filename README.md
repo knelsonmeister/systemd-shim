@@ -1,5 +1,5 @@
 # systemd-shim for MX Linux
-This repo contains a fork of systemd-shim.  It builds a Debian Buster based debian package for MX Linux.
+This repo contains a fork of systemd-shim.  It builds a Debian Buster/Bullseye based debian package for MX Linux.
 It depends on a modified systemd (available here: https://github.com/knelsonmeister/systemd)
 
 ## Current Version: 10-4
