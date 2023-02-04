@@ -1,10 +1,10 @@
 # systemd-shim for MX Linux
-This repo contains a fork of systemd-shim.  It builds a Debian Buster/Bullseye based debian package for MX Linux.
+This repo contains a fork of systemd-shim.  It builds a Debian Buster/Bullseye/Bookworm based debian package for MX Linux.
 It depends on a modified systemd (available here: https://github.com/knelsonmeister/systemd)
 
 ## Background:
 Systemd-shim allows a system to boot up using a SYSV init, but still be able to support the modern programs that depend on systemd.  It is not perfect, but it allows for a Linux distribution to support both SYSV init and systemd as a choice in the grub boot menu.  MX Linux does just that.
-Debian used to support systemd-shim, but support was dropped in Debian Buster.  This repo and the systemd repo linked above are an effort to maintain the systemd-shim support in Debian Buster and Debian Bullseye.
+Debian used to support systemd-shim, but support was dropped in Debian Buster.  This repo and the systemd repo linked above are an effort to maintain the systemd-shim support in Debian Buster, Debian Bullseye, and Debian Bookworm.
 
 ## Current Version: 10-4
 Based on:
