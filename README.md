@@ -21,8 +21,6 @@ Based on:
 ```
 git clone https://github.com/knelsonmeister/systemd-shim.git
 cd systemd-shim
-ln -s debian/patches .
-quilt push -a
 dpkg-buildpackage -uc -us -b
 cd ..
 ```
