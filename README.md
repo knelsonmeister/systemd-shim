@@ -19,6 +19,7 @@ Based on:
 
 ## How To Build:
 ```
+sudo apt install systemd-dev
 git clone https://salsa.debian.org/knelsonmeister/systemd-shim.git
 or
 git clone https://github.com/knelsonmeister/systemd-shim.git
