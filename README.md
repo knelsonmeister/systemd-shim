@@ -1,6 +1,6 @@
 # systemd-shim for MX Linux
 This repo contains a fork of systemd-shim.  It builds a Debian Buster/Bullseye/Bookworm/Trixie based debian package for MX Linux.
-It depends on a modified systemd (available here: https://salsa.debian.org/knelsonmeister/systemd/-/tree/debian/trixie or https://github.com/knelsonmeister/systemd)
+It depends on a modified systemd (available here: https://salsa.debian.org/knelsonmeister/systemd or https://github.com/knelsonmeister/systemd)
 
 ## Background:
 Systemd-shim allows a system to boot up using a SYSV init, but still be able to support the modern programs that depend on systemd.  It is not perfect, but it allows for a Linux distribution to support both SYSV init and systemd as a choice in the grub boot menu.  MX Linux does just that.
