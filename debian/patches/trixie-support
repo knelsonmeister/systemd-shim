@@ -321,10 +321,10 @@ Index: systemd-shim/src/unit.c
    else if (g_str_has_suffix (unit_name, ".slice") || g_str_has_suffix (unit_name, ".scope"))
      unit = cgroup_unit_new (unit_name);
 
-+  else if (g_str_has_prefix (unit_name, "user-runtime-dir@") || g_str_has_suffix (unit_name, ".service"))
-+    unit = user_runtime_dir_unit_new (unit_name);
++  else if (g_str_has_prefix (unit_name, "user-runtime-dir@") && g_str_has_suffix (unit_name, ".service"))
++    unit = user_unit_new (unit_name);
 +
-+  else if (g_str_has_prefix (unit_name, "user@") || g_str_has_suffix (unit_name, ".service"))
++  else if (g_str_has_prefix (unit_name, "user@") && g_str_has_suffix (unit_name, ".service"))
 +    unit = user_unit_new (unit_name);
 +
    if (unit == NULL)
