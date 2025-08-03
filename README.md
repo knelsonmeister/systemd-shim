@@ -1,4 +1,4 @@
-## NOTE: This project was broken by a change in tbe 6.12 kernel that turns off cgroup v1 support by default. Therefore, this project is effectively retired.
+## NOTE: This project was broken by a change in the 6.12 kernel that turns off cgroup v1 support by default. Therefore, this project is effectively retired.
 
 # systemd-shim for MX Linux
 This repo contains a fork of systemd-shim.  It builds a Debian Buster/Bullseye/Bookworm/Trixie based debian package for MX Linux.
